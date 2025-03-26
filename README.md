@@ -16,14 +16,12 @@ import (
 
 type size_t uintptr
 
-type Libc struct {
-	Malloc func(size_t) unsafe.Pointer `purego:"malloc"`
-	Free   func(unsafe.Pointer)        `purego:"free"`
-	Puts   func(string)                `purego:"puts"`
-}
-
 func main() {
-	var libc Libc
+	var libc truct {
+		Malloc func(size_t) unsafe.Pointer `purego:"malloc"`
+		Free   func(unsafe.Pointer)        `purego:"free"`
+		Puts   func(string)                `purego:"puts"`
+	}
 	if err := puregostruct.LoadLibrary(&libc,
 		"/usr/lib/libSystem.B.dylib", // darwin
 		"libc.so.7",                  // freebsd

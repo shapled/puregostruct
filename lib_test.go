@@ -1,6 +1,8 @@
 package puregostruct_test
 
 import (
+	"fmt"
+	"strings"
 	"testing"
 	"unsafe"
 
@@ -9,14 +11,12 @@ import (
 
 type size_t uintptr
 
-type Libc struct {
-	Malloc func(size_t) unsafe.Pointer `purego:"malloc"`
-	Free   func(unsafe.Pointer)        `purego:"free"`
-	Puts   func(string)                `purego:"puts"`
-}
-
-func TestLibc(t *testing.T) {
-	var libc Libc
+func TestLoadLibrary(t *testing.T) {
+	var libc struct {
+		Malloc func(size_t) unsafe.Pointer `purego:"malloc"`
+		Free   func(unsafe.Pointer)        `purego:"free"`
+		Puts   func(string)                `purego:"puts"`
+	}
 	if err := puregostruct.LoadLibrary(&libc,
 		"/usr/lib/libSystem.B.dylib", // darwin
 		"libc.so.7",                  // freebsd
@@ -39,4 +39,28 @@ func TestLibc(t *testing.T) {
 	libc.Free(vptr)
 
 	libc.Puts("Hello, World!")
+}
+
+func TestLoadLibraryPanic(t *testing.T) {
+	defer func() {
+		err := recover()
+		if err == nil {
+			t.Fatal("expected panic")
+		}
+		msg := fmt.Sprintf("%v", err)
+		if !strings.HasPrefix(msg, "failed to register field `NoSuchFunc` with purego tag `no_such_func`") {
+			t.Fatalf("wrong error message: %s", msg)
+		}
+	}()
+
+	var libc struct {
+		NoSuchFunc func(size_t) unsafe.Pointer `purego:"no_such_func"`
+	}
+	puregostruct.LoadLibrary(&libc,
+		"/usr/lib/libSystem.B.dylib", // darwin
+		"libc.so.7",                  // freebsd
+		"libc.so.6",                  // linux
+		"libc.so",                    // netbsd
+		"ucrtbase.dll",               // windows
+	)
 }

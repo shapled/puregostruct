@@ -7,6 +7,15 @@ import (
 	"github.com/ebitengine/purego"
 )
 
+func registerLibFunc(field string, val any, lib uintptr, symbol string) {
+	defer func() {
+		if err := recover(); err != nil {
+			panic(fmt.Sprintf("failed to register field `%s` with purego tag `%s`: %v", field, symbol, err))
+		}
+	}()
+	purego.RegisterLibFunc(val, lib, symbol)
+}
+
 func LoadLibrary(val any, names ...string) error {
 	var err error
 	var lib uintptr
@@ -36,7 +45,7 @@ func LoadLibrary(val any, names ...string) error {
 			if !v.Field(i).CanAddr() {
 				return fmt.Errorf("field %s cannot be addressed", field.Name)
 			}
-			purego.RegisterLibFunc(v.Field(i).Addr().Interface(), lib, symbol)
+			registerLibFunc(field.Name, v.Field(i).Addr().Interface(), lib, symbol)
 		}
 	}
 
